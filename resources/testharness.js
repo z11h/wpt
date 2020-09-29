@@ -520,6 +520,23 @@ policies and contribution forms [3].
             Object.prototype.toString.call(worker) == '[object ServiceWorker]';
     }
 
+    function get_test_name(func, name)
+    {
+        if (name) {
+            return name;
+        }
+
+        if (func) {
+            var func_code = func.toString();
+            var arrow = func_code.match(/^\(\)\s*=>\s*/);
+            if (arrow !== null && /[\u000A\u000D\u2028\u2029]/.test(func_code))) {
+                return func_code.substring;
+            }
+        }
+
+        return test_environment.next_default_test_name();
+    }
+
     /*
      * API functions
      */
@@ -530,7 +547,7 @@ policies and contribution forms [3].
             tests.status.message = '`test` invoked after `promise_setup`';
             tests.complete();
         }
-        var test_name = name ? name : test_environment.next_default_test_name();
+        var test_name = get_test_name(func, name);
         var test_obj = new Test(test_name, properties);
         var value = test_obj.step(func, test_obj, test_obj);
 
@@ -566,7 +583,7 @@ policies and contribution forms [3].
             name = func;
             func = null;
         }
-        var test_name = name ? name : test_environment.next_default_test_name();
+        var test_name = get_test_name(func, name);
         var test_obj = new Test(test_name, properties);
         if (func) {
             var value = test_obj.step(func, test_obj, test_obj);
@@ -603,7 +620,7 @@ policies and contribution forms [3].
             name = func;
             func = null;
         }
-        var test_name = name ? name : test_environment.next_default_test_name();
+        var test_name = get_test_name(func, name);
         var test = new Test(test_name, properties);
         test._is_promise_test = true;
 
