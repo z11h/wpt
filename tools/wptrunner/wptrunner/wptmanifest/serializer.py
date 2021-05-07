@@ -1,14 +1,13 @@
-from six import ensure_text
+from typing import List
 
-from .node import NodeVisitor, ValueNode, ListNode, BinaryExpressionNode
+from .node import NodeVisitor, BinaryExpressionNode, BinaryOperatorNode, ListNode, NumberNode, UnaryOperatorNode, ValueNode
 from .parser import atoms, precedence
 
 atom_names = {v: "@%s" % k for (k,v) in atoms.items()}
 
 named_escapes = {"\a", "\b", "\f", "\n", "\r", "\t", "\v"}
 
-def escape(string, extras=""):
-    # Assumes input bytes are either UTF8 bytes or unicode.
+def escape(string: str, extras: str = "") -> str:
     rv = ""
     for c in string:
         if c in named_escapes:
@@ -21,7 +20,7 @@ def escape(string, extras=""):
             rv += "\\" + c
         else:
             rv += c
-    return ensure_text(rv)
+    return rv
 
 
 class ManifestSerializer(NodeVisitor):
@@ -73,8 +72,8 @@ class ManifestSerializer(NodeVisitor):
         rv.append("]")
         return ["".join(rv)]
 
-    def visit_ValueNode(self, node):
-        data = ensure_text(node.data)
+    def visit_ValueNode(self, node: ValueNode) -> List[str]:
+        data = node.data
         if ("#" in data or
             data.startswith("if ") or
             (isinstance(node.parent, ListNode) and
@@ -99,8 +98,8 @@ class ManifestSerializer(NodeVisitor):
             rv[0] += self.visit(child)[0]
         return rv
 
-    def visit_NumberNode(self, node):
-        return [ensure_text(node.data)]
+    def visit_NumberNode(self, node: NumberNode) -> List[str]:
+        return [str(node.data)]
 
     def visit_VariableNode(self, node):
         rv = escape(node.data)
@@ -133,11 +132,11 @@ class ManifestSerializer(NodeVisitor):
             children.append(child_str)
         return [" ".join(children)]
 
-    def visit_UnaryOperatorNode(self, node):
-        return [ensure_text(node.data)]
+    def visit_UnaryOperatorNode(self, node: UnaryOperatorNode) -> List[str]:
+        return [str(node.data)]
 
-    def visit_BinaryOperatorNode(self, node):
-        return [ensure_text(node.data)]
+    def visit_BinaryOperatorNode(self, node: BinaryOperatorNode) -> List[str]:
+        return [str(node.data)]
 
 
 def serialize(tree, *args, **kwargs):
