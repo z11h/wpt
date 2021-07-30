@@ -312,6 +312,16 @@
                         status: harness_status.structured_clone(),
                         asserts: asserts.map(assert => assert.structured_clone()),
                     });
+
+                    // Close the worker after completion (except in service
+                    // workers, where there's no way to do that).
+                    // TODO: Worker tests don't have an implicit timeout, so in
+                    // cases where an async/promise test never resolves, the
+                    // completion callback won't be called and the worker won't
+                    // be closed.
+                    if ("close" in self) {
+                        self.close();
+                    }
                 });
     };
 
