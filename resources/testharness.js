@@ -313,15 +313,12 @@
                         asserts: asserts.map(assert => assert.structured_clone()),
                     });
 
-                    // Close the worker after completion (except in service
-                    // workers, where there's no way to do that).
+                    // Close the worker after completion.
                     // TODO: Worker tests don't have an implicit timeout, so in
                     // cases where an async/promise test never resolves, the
                     // completion callback won't be called and the worker won't
                     // be closed.
-                    if ("close" in self) {
-                        self.close();
-                    }
+                    this_obj.close_worker();
                 });
     };
 
@@ -332,6 +329,9 @@
         // worker tests behave as if settings.explicit_timeout is true.
         return null;
     };
+
+    // Closes the worker, if applicable.
+    WorkerTestEnvironment.prototype.close_worker = function() {};
 
     /*
      * Dedicated web workers.
@@ -356,6 +356,10 @@
         tests.wait_for_finish = true;
     };
 
+    DedicatedWorkerTestEnvironment.prototype.close_worker = function() {
+        self.close();
+    };
+
     /*
      * Shared web workers.
      * https://html.spec.whatwg.org/multipage/workers.html#sharedworkerglobalscope
@@ -366,11 +370,19 @@
     function SharedWorkerTestEnvironment() {
         WorkerTestEnvironment.call(this);
         var this_obj = this;
+
+        this.connected = false;
+        this.close_on_connect = false;
+
         // Shared workers receive message ports via the 'onconnect' event for
         // each connection.
         self.addEventListener("connect",
                 function(message_event) {
+                    this_obj.connected = true;
                     this_obj._add_message_port(message_event.source);
+                    if (this_obj.close_on_connect) {
+                        self.close();
+                    }
                 }, false);
     }
     SharedWorkerTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
@@ -380,6 +392,14 @@
         // In the absence of an onload notification, we a require shared
         // workers to explicitly signal when the tests are done.
         tests.wait_for_finish = true;
+    };
+
+    SharedWorkerTestEnvironment.prototype.close_worker = function() {
+        if (this.connected) {
+            self.close();
+        } else {
+            this.close_on_connect = true;
+        }
     };
 
     /*
