@@ -36,10 +36,24 @@
   <summary>Lorem ipsum</summary>
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
 </details>
+<script>
+  // This one works
+  window.toggleFiredOnDetails9EarlyOne = false;
+  document.getElementById('details9').ontoggle = () => {
+    window.toggleFiredOnDetails9EarlyOne = true;
+  };
+</script>
 <details id=details10>
   <summary>Lorem ipsum</summary>
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
 </details>
+<script>
+  // This one DOESN'T work!!
+  window.toggleFiredOnDetails9EarlyTwo = false;
+  document.getElementById('details9').ontoggle = () => {
+    window.toggleFiredOnDetails9EarlyTwo = true;
+  };
+</script>
 <script>
   var t1 = async_test("Adding open to 'details' should fire a toggle event at the 'details' element"),
   t2 = async_test("Removing open from 'details' should fire a toggle event at the 'details' element"),
@@ -141,7 +155,8 @@
   details9.open = true; // opens details9
   t9.step_timeout(function() {
     assert_true(details9.open);
-    assert_true(toggleFiredOnDetails9);
+    assert_true(window.toggleFiredOnDetails9EarlyOne, 'one');
+    assert_true(window.toggleFiredOnDetails9EarlyTwo, 'two');
     t9.done();
   }, 0);
 
