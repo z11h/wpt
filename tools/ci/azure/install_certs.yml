@@ -1,5 +1,10 @@
 steps:
-- script: security add-trusted-cert -r trustRoot tools/certs/cacert.pem
+- script: |
+    KEYCHAIN=$(security default-keychain -d user)
+    echo $KEYCHAIN
+    KEYCHAIN=$(eval echo $KEYCHAIN)
+    echo $KEYCHAIN
+    sudo security add-trusted-cert -r trustRoot -k "$KEYCHAIN" tools/certs/cacert.pem
   displayName: 'Install web-platform.test certificate (macOS)'
   condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 - script: certutil –addstore -enterprise –f "Root" tools\certs\cacert.pem
