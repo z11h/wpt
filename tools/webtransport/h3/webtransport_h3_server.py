@@ -94,7 +94,7 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
                 session_id=event.stream_id,
                 path=path,
                 request_headers=event.headers)
-        except IOError:
+        except OSError:
             self._send_error_response(event.stream_id, 404)
             return
 

@@ -33,7 +33,7 @@ class CmpWrapper:
         return self.compare_function(self.test_manager, self.obj, other.obj) != 0
 
 
-class TestsManager(object):
+class TestsManager:
     def initialize(
         self,
         test_loader,
