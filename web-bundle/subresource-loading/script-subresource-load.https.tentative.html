@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<title>Subresource loading with script-based API</title>
+<link rel="help" href="https://github.com/WICG/webpackage/blob/main/explainers/subresource-loading.md" />
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<body>
+  <script type="webbundle">
+    {
+      "source": "../resources/wbn/subresource.wbn",
+      "resources": ["../resources/wbn/root.js"]
+    }
+  </script>
+    <script>
+      promise_test(async () => {
+        const response = await fetch('https://web-platform.test:8444/web-bundle/resources/wbn/root.js');
+        assert_true(response.ok);
+      }, "Subresource should be loaded from webbundle");
+  </script>
+</body>
