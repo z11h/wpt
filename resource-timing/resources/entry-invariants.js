@@ -486,7 +486,7 @@ const network_error_entry_test = (url, args_or_loader, label) => {
     promise_test(async () => {
         const timeBefore = performance.now();
         loader = typeof args_or_loader === 'function' ?
-          () => args_or_loader(url) : 
+          () => args_or_loader(url) :
           () => fetch(url, args_or_loader);
         try {
           url = await loader()
