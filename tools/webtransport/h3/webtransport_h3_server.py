@@ -6,13 +6,13 @@ import threading
 import traceback
 from enum import IntEnum
 from urllib.parse import urlparse
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 # TODO(bashi): Remove import check suppressions once aioquic dependency is resolved.
 from aioquic.buffer import UINT_VAR_MAX_SIZE, Buffer  # type: ignore
 from aioquic.asyncio import QuicConnectionProtocol, serve  # type: ignore
 from aioquic.asyncio.client import connect  # type: ignore
-from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection  # type: ignore
+from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection, ProtocolError  # type: ignore
 from aioquic.h3.events import H3Event, HeadersReceived, WebTransportStreamDataReceived, DatagramReceived  # type: ignore
 from aioquic.quic.configuration import QuicConfiguration  # type: ignore
 from aioquic.quic.connection import stream_is_unidirectional  # type: ignore
@@ -38,6 +38,12 @@ _doc_root: str = ""
 
 class CapsuleType(IntEnum):
     # Defined in
+    # https://www.ietf.org/archive/id/draft-ietf-masque-h3-datagram-03.html.
+    DATAGRAM = 0xff37a0
+    REGISTER_DATAGRAM_CONTEXT = 0xff37a1
+    REGISTER_DATAGRAM_NO_CONTEXT = 0xff37a2
+    CLOSE_DATAGRAM_CONTEXT = 0xff37a3
+    # Defined in
     # https://www.ietf.org/archive/id/draft-ietf-webtrans-http3-01.html.
     CLOSE_WEBTRANSPORT_SESSION = 0x2843
 
@@ -51,19 +57,9 @@ class H3Capsule:
         self.type = type
         self.data = data
 
-    @staticmethod
-    def decode(data: bytes) -> Any:
-        """
-        Returns an H3Capsule representing the given bytes.
-        """
-        buffer = Buffer(data=data)
-        type = buffer.pull_uint_var()
-        length = buffer.pull_uint_var()
-        return H3Capsule(type, buffer.pull_bytes(length))
-
     def encode(self) -> bytes:
         """
-        Encodes this H3Connection and return the bytes.
+        Encodes this H3Capsule and return the bytes.
         """
         buffer = Buffer(capacity=len(self.data) + 2 * UINT_VAR_MAX_SIZE)
         buffer.push_uint_var(self.type)
@@ -72,13 +68,73 @@ class H3Capsule:
         return buffer.data
 
 
+class H3CapsuleDecoder:
+    """
+    A decoder of H3Capsule. This is a streaming decoder and can handle multiple
+    decoders.
+    """
+    def __init__(self) -> None:
+        self._buffer: Optional[Buffer] = None
+        self._type: Optional[Int] = None
+        self._length: Optional[Int] = None
+        self._final: bool = False
+
+    def append(self, bs: bytes) -> None:
+        """
+        Appends the given bytes to this decoder.
+        """
+        assert not self._final
+
+        if self._buffer:
+            remaining = self._buffer.pull_bytes(
+                self._buffer.capacity - self._buffer.tell())
+            self._buffer = Buffer(data=(remaining + bs))
+        else:
+            self._buffer = Buffer(data=bs)
+
+    def final(self) -> None:
+        """
+        Pushes the end-of-stream mark to this decoder. After calling this,
+        calling append() will be invalid.
+        """
+        self._final = True
+
+    def __iter__(self) -> Iterator[H3Capsule]:
+        try:
+            while self._buffer is not None:
+                position = self._buffer.tell()
+                if self._type is None:
+                    self._type = self._buffer.pull_uint_var()
+                if self._length is None:
+                    self._length = self._buffer.pull_uint_var()
+                if self._buffer.capacity - self._buffer.tell() < self._length:
+                    return
+                capsule = H3Capsule(
+                    self._type, self._buffer.pull_bytes(self._length))
+                self._type = None
+                self._length = None
+                if self._buffer.tell() == self._buffer.capacity:
+                    self._buffer = None
+                yield capsule
+        except BufferReadError as e:
+            if self._final:
+                raise e
+            size = self._buffer.capacity - self._buffer.tell()
+            if size >= UINT_VAR_MAX_SIZE:
+                raise e
+            # Ignore the error because there may not be sufficient input.
+            return
+
+
 class WebTransportH3Protocol(QuicConnectionProtocol):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._handler: Optional[Any] = None
         self._http: Optional[H3Connection] = None
         self._session_stream_id: Optional[int] = None
-        self._session_stream_data: bytes = b""
+        self._close_info: Optional[Tuple[int, bytes]] = None
+        self._capsule_decoder_for_session_stream: H3CapsuleDecoder =\
+            H3CapsuleDecoder()
 
     def quic_event_received(self, event: QuicEvent) -> None:
         if isinstance(event, ProtocolNegotiated):
@@ -110,21 +166,8 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
 
         if self._session_stream_id == event.stream_id and\
            isinstance(event, WebTransportStreamDataReceived):
-            self._session_stream_data += event.data
-            if event.stream_ended:
-                close_info = None
-                if len(self._session_stream_data) > 0:
-                    capsule: H3Capsule =\
-                        H3Capsule.decode(self._session_stream_data)
-                    close_info = (0, b"")
-                    if capsule.type == CapsuleType.CLOSE_WEBTRANSPORT_SESSION:
-                        buffer = Buffer(capsule.data)
-                        code = buffer.pull_uint32()
-                        reason = buffer.data()
-                        # TODO(yutakahirano): Make sure `reason` is a
-                        # UTF-8 text.
-                        close_info = (code, reason)
-                self.call_session_closed(close_info, abruptly=False)
+            self._receive_data_on_session_stream(
+                event.data, event.stream_ended)
         elif self._handler is not None:
             if isinstance(event, WebTransportStreamDataReceived):
                 self._handler.stream_data_received(
@@ -133,6 +176,37 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
                     stream_ended=event.stream_ended)
             elif isinstance(event, DatagramReceived):
                 self._handler.datagram_received(data=event.data)
+
+    def _receive_data_on_session_stream(self, data: bytes, fin: bool) -> None:
+        self._capsule_decoder_for_session_stream.append(data)
+        if fin:
+            self._capsule_decoder_for_session_stream.final()
+        for capsule in self._capsule_decoder_for_session_stream:
+            if capsule.type == CapsuleType.DATAGRAM:
+                raise ProtocolError(
+                    "Unexpected capsule type: {}".format(capsule.type))
+            if capsule.type == CapsuleType.REGISTER_DATAGRAM_CONTEXT:
+                raise ProtocolError(
+                    "Unexpected capsule type: {}".format(capsule.type))
+            elif capsule.type == CapsuleType.REGISTER_DATAGRAM_NO_CONTEXT:
+                # TODO(yutakahirano): Check the Datagram Format Type.
+                pass
+            elif capsule.type == CapsuleType.CLOSE_DATAGRAM_CONTEXT:
+                raise ProtocolError(
+                    "Unexpected capsule type: {}".format(capsule.type))
+            elif capsule.type == CapsuleType.CLOSE_WEBTRANSPORT_SESSION:
+                if self._close_info is not None:
+                    raise ProtocolError(
+                        "CLOSE_WEBTRANSPORT_SESSION arrives twice")
+
+                buffer = Buffer(capsule.data)
+                code = buffer.pull_uint32()
+                # TODO(yutakahirano): Make sure `reason` is a
+                # UTF-8 text.
+                reason = buffer.data()
+                self._close_info = (code, reason)
+        if fin:
+            self.call_session_closed(self._close_info, abruptly=False)
 
     def _send_error_response(self, stream_id: int, status_code: int) -> None:
         assert self._http is not None
