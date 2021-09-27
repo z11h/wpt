@@ -485,9 +485,9 @@ const attribute_test_with_validator = (loader, path, validator, run_test, test_l
 const network_error_entry_test = (url, args_or_loader, label) => {
     promise_test(async () => {
         const timeBefore = performance.now();
-        loader = typeof args_or_loader === 'function' ?
-          () => args_or_loader(url) :
-          () => fetch(url, args_or_loader);
+        loader = (typeof args_or_loader === 'function') ?
+          (() => args_or_loader(url)) :
+          (() => fetch(url, args_or_loader));
         try {
           url = await loader()
         } catch (e) {
@@ -496,7 +496,7 @@ const network_error_entry_test = (url, args_or_loader, label) => {
             assert_equals(entries.length, 1, 'resource timing entry for network error');
             const entry = entries[0]
             assert_equals(entry.startTime, entry.fetchStart, 'startTime and fetchStart should be equal');
-            assert_greater_than(entry.startTime, timeBefore, 'startTime and fetchStart should be greater than the time before fetching');
+            assert_greater_than_equal(entry.startTime, timeBefore, 'startTime and fetchStart should be greater than the time before fetching');
             assert_greater_than_equal(timeAfter, entry.responseEnd, 'endTime should be less than the time right after returning from the fetch');
             invariants.assert_tao_failure_resource(entry);
             return
