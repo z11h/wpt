@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Iterator, Optional
 
 # TODO(bashi): Remove import check suppressions once aioquic dependency is
 # resolved.
@@ -45,8 +45,8 @@ class H3CapsuleDecoder:
     """
     def __init__(self) -> None:
         self._buffer: Optional[Buffer] = None
-        self._type: Optional[Int] = None
-        self._length: Optional[Int] = None
+        self._type: Optional[int] = None
+        self._length: Optional[int] = None
         self._final: bool = False
 
     def append(self, bs: bytes) -> None:
@@ -91,6 +91,8 @@ class H3CapsuleDecoder:
         except BufferReadError as e:
             if self._final:
                 raise e
+            if not self._buffer:
+                return 0
             size = self._buffer.capacity - self._buffer.tell()
             if size >= UINT_VAR_MAX_SIZE:
                 raise e

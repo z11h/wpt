@@ -1,11 +1,11 @@
 import unittest
 
-from capsule import H3Capsule, H3CapsuleDecoder
+from capsule import H3Capsule, H3CapsuleDecoder  # type: ignore
 from aioquic.buffer import BufferReadError  # type: ignore
 
 
 class H3CapsuleTest(unittest.TestCase):
-    def test_capsule(self):
+    def test_capsule(self) -> None:
         capsule1 = H3Capsule(0x12345, b'abcde')
         bs = capsule1.encode()
         decoder = H3CapsuleDecoder()
@@ -16,7 +16,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.type, capsule2.type, 'type')
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
-    def test_small_capsule(self):
+    def test_small_capsule(self) -> None:
         capsule1 = H3Capsule(0, b'')
         bs = capsule1.encode()
         decoder = H3CapsuleDecoder()
@@ -27,7 +27,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.type, capsule2.type, 'type')
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
-    def test_capsule_append(self):
+    def test_capsule_append(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x80')
 
@@ -56,7 +56,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.type, 0, 'type')
         self.assertEqual(capsule2.data, b'', 'data')
 
-    def test_multiple_values(self):
+    def test_multiple_values(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01\x02ab\x03\x04cdef')
 
@@ -73,7 +73,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.type, 3, 'type')
         self.assertEqual(capsule2.data, b'cdef', 'data')
 
-    def test_final(self):
+    def test_final(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
 
@@ -89,7 +89,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.type, 1, 'type')
         self.assertEqual(capsule1.data, b'a', 'data')
 
-    def test_final_invalid(self):
+    def test_final_invalid(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
 
