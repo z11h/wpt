@@ -885,7 +885,7 @@ class ConfigBuilder(config.ConfigBuilder):
             "https-public": ["auto"],
             "ws": ["auto"],
             "wss": ["auto"],
-            "webtransport-h3": ["auto"],
+            "webtransport-h3": [11000],
         },
         "check_subdomains": True,
         "log_level": "info",
