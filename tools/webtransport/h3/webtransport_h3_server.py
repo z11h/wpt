@@ -133,6 +133,7 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
                 # UTF-8 text.
                 reason = buffer.data()
                 self._close_info = (code, reason)
+                # TODO(yutakahirano): Make sure this is the last capsule.
         if fin:
             self.call_session_closed(self._close_info, abruptly=False)
 
