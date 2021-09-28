@@ -1,14 +1,14 @@
 import unittest
 
-from capsule import H3Capsule, H3CapsuleDecoder  # type: ignore
+import capsule
 from aioquic.buffer import BufferReadError  # type: ignore
 
 
 class H3CapsuleTest(unittest.TestCase):
     def test_capsule(self) -> None:
-        capsule1 = H3Capsule(0x12345, b'abcde')
+        capsule1 = capsule.H3Capsule(0x12345, b'abcde')
         bs = capsule1.encode()
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(bs)
         capsule2 = next(iter(decoder))
 
@@ -17,9 +17,9 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
     def test_small_capsule(self) -> None:
-        capsule1 = H3Capsule(0, b'')
+        capsule1 = capsule.H3Capsule(0, b'')
         bs = capsule1.encode()
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(bs)
         capsule2 = next(iter(decoder))
 
@@ -28,7 +28,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
     def test_capsule_append(self) -> None:
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(b'\x80')
 
         with self.assertRaises(StopIteration):
@@ -57,7 +57,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.data, b'', 'data')
 
     def test_multiple_values(self) -> None:
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(b'\x01\x02ab\x03\x04cdef')
 
         it = iter(decoder)
@@ -74,7 +74,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.data, b'cdef', 'data')
 
     def test_final(self) -> None:
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(b'\x01')
 
         with self.assertRaises(StopIteration):
@@ -90,7 +90,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.data, b'a', 'data')
 
     def test_final_invalid(self) -> None:
-        decoder = H3CapsuleDecoder()
+        decoder = capsule.H3CapsuleDecoder()
         decoder.append(b'\x01')
 
         with self.assertRaises(StopIteration):
