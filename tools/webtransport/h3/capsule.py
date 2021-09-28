@@ -72,7 +72,6 @@ class H3CapsuleDecoder:
     def __iter__(self) -> Iterator[H3Capsule]:
         try:
             while self._buffer is not None:
-                position = self._buffer.tell()
                 if self._type is None:
                     self._type = self._buffer.pull_uint_var()
                 if self._length is None:
