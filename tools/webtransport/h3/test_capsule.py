@@ -13,7 +13,7 @@ else:
 class H3CapsuleTest(unittest.TestCase):
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_capsule(self) -> None:
+    def test_capsule(self) -> None:  # type: ignore
         capsule1 = H3Capsule(0x12345, b'abcde')
         bs = capsule1.encode()
         decoder = H3CapsuleDecoder()
@@ -26,7 +26,7 @@ class H3CapsuleTest(unittest.TestCase):
 
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_small_capsule(self) -> None:
+    def test_small_capsule(self) -> None:  # type: ignore
         capsule1 = H3Capsule(0, b'')
         bs = capsule1.encode()
         decoder = H3CapsuleDecoder()
@@ -39,7 +39,7 @@ class H3CapsuleTest(unittest.TestCase):
 
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_capsule_append(self) -> None:
+    def test_capsule_append(self) -> None:  # type: ignore
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x80')
 
@@ -70,7 +70,7 @@ class H3CapsuleTest(unittest.TestCase):
 
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_multiple_values(self) -> None:
+    def test_multiple_values(self) -> None:  # type: ignore
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01\x02ab\x03\x04cdef')
 
@@ -89,7 +89,7 @@ class H3CapsuleTest(unittest.TestCase):
 
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_final(self) -> None:
+    def test_final(self) -> None:  # type: ignore
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
 
@@ -107,7 +107,7 @@ class H3CapsuleTest(unittest.TestCase):
 
     @pytest.mark.skipif(
         not has_aioquic, reason='not having aioquic')  # type: ignore
-    def test_final_invalid(self) -> None:
+    def test_final_invalid(self) -> None:  # type: ignore
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
 
