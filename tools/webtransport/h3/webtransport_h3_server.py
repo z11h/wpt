@@ -20,7 +20,7 @@ from aioquic.quic.events import QuicEvent, ProtocolNegotiated, ConnectionTermina
 from aioquic.tls import SessionTicket  # type: ignore
 
 from tools.wptserve.wptserve import stash  # type: ignore
-from .capsule import H3Capsule, H3CapsuleDecoder
+from .capsule import H3Capsule, H3CapsuleDecoder, CapsuleType
 
 """
 A WebTransport over HTTP/3 server for testing.
@@ -35,18 +35,6 @@ SERVER_NAME = 'webtransport-h3-server'
 
 _logger: logging.Logger = logging.getLogger(__name__)
 _doc_root: str = ""
-
-
-class CapsuleType(IntEnum):
-    # Defined in
-    # https://www.ietf.org/archive/id/draft-ietf-masque-h3-datagram-03.html.
-    DATAGRAM = 0xff37a0
-    REGISTER_DATAGRAM_CONTEXT = 0xff37a1
-    REGISTER_DATAGRAM_NO_CONTEXT = 0xff37a2
-    CLOSE_DATAGRAM_CONTEXT = 0xff37a3
-    # Defined in
-    # https://www.ietf.org/archive/id/draft-ietf-webtrans-http3-01.html.
-    CLOSE_WEBTRANSPORT_SESSION = 0x2843
 
 
 class WebTransportH3Protocol(QuicConnectionProtocol):

@@ -24,6 +24,11 @@ class H3Capsule:
     https://ietf-wg-masque.github.io/draft-ietf-masque-h3-datagram/draft-ietf-masque-h3-datagram.html#name-capsules.
     """
     def __init__(self, type: int, data: bytes) -> None:
+        """
+        :param type the type of this Capsule. We don't use CapsuleType here
+                    because this may be a capsule of an unknown type.
+        :param data the payload
+        """
         self.type = type
         self.data = data
 
