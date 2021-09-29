@@ -1,3 +1,5 @@
+# type: ignore
+
 import unittest
 import importlib.util
 import pytest
@@ -5,14 +7,13 @@ import pytest
 if importlib.util.find_spec('aioquicx'):
     has_aioquic = True
     from .capsule import H3Capsule, H3CapsuleDecoder
-    from aioquic.buffer import BufferReadError  # type: ignore
+    from aioquic.buffer import BufferReadError
 else:
     has_aioquic = False
 
 
 class H3CapsuleTest(unittest.TestCase):
-    @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+    @pytest.mark.skipif(not has_aioquic, reason='not having aioquic')
     def test_capsule(self) -> None:
         capsule1 = H3Capsule(0x12345, b'abcde')
         bs = capsule1.encode()
@@ -25,7 +26,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
     @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+        not has_aioquic, reason='not having aioquic')
     def test_small_capsule(self) -> None:
         capsule1 = H3Capsule(0, b'')
         bs = capsule1.encode()
@@ -37,8 +38,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.type, capsule2.type, 'type')
         self.assertEqual(capsule1.data, capsule2.data, 'data')
 
-    @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+    @pytest.mark.skipif(not has_aioquic, reason='not having aioquic')
     def test_capsule_append(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x80')
@@ -68,8 +68,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.type, 0, 'type')
         self.assertEqual(capsule2.data, b'', 'data')
 
-    @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+    @pytest.mark.skipif(not has_aioquic, reason='not having aioquic')
     def test_multiple_values(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01\x02ab\x03\x04cdef')
@@ -87,8 +86,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule2.type, 3, 'type')
         self.assertEqual(capsule2.data, b'cdef', 'data')
 
-    @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+    @pytest.mark.skipif(not has_aioquic, reason='not having aioquic')
     def test_final(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
@@ -105,8 +103,7 @@ class H3CapsuleTest(unittest.TestCase):
         self.assertEqual(capsule1.type, 1, 'type')
         self.assertEqual(capsule1.data, b'a', 'data')
 
-    @pytest.mark.skipif(
-        not has_aioquic, reason='not having aioquic')  # type: ignore
+    @pytest.mark.skipif(not has_aioquic, reason='not having aioquic')
     def test_final_invalid(self) -> None:
         decoder = H3CapsuleDecoder()
         decoder.append(b'\x01')
