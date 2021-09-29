@@ -70,10 +70,10 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
             method = headers.get(b":method")
             protocol = headers.get(b":protocol")
             if method == b"CONNECT" and protocol == b"webtransport":
+                self._session_stream_id = event.stream_id
                 self._handshake_webtransport(event, headers)
             else:
                 self._send_error_response(event.stream_id, 400)
-            self._session_stream_id = event.stream_id
 
         if isinstance(event, WebTransportStreamDataReceived) and\
            self._session_stream_id == event.stream_id:
