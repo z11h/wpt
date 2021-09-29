@@ -5,7 +5,7 @@ import pytest
 if importlib.util.find_spec('aioquicx'):
     has_aioquic = True
     from .capsule import H3Capsule, H3CapsuleDecoder
-    from aioquic.buffer import BufferReadError
+    from aioquic.buffer import BufferReadError  # type: ignore
 else:
     has_aioquic = False
 
