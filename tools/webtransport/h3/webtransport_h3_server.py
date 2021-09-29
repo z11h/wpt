@@ -231,7 +231,7 @@ class WebTransportSession:
 
         :param close_info The close information to send.
         """
-        self._allow_calling_session_closed = False
+        self._protocol._allow_calling_session_closed = False
         assert self._protocol._session_stream_id is not None
         session_stream_id = self._protocol._session_stream_id
         if close_info is not None:
