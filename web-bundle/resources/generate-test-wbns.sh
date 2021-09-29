@@ -101,3 +101,8 @@ gen-bundle \
   -har relative-url.har \
   -o wbn/relative-url.wbn
 
+gen-bundle \
+  -version b1 \
+  -har corp.har \
+  -primaryURL $wpt_test_remote_origin/web-bundle/resources/wbn/cors/no-corp.js \
+  -o wbn/cors/corp.wbn
