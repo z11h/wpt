@@ -4,7 +4,6 @@ import os
 import ssl
 import threading
 import traceback
-from enum import IntEnum
 from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Tuple
 
